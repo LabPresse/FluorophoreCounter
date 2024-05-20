@@ -1,5 +1,21 @@
 
+# Fluorophore Counter
+
+## Getting started
+
+To get started, clone this repository to your local machine, and install the required packages. We reccomend using conda with a virtual environment. To create a virtual environment with conda, run the following commands:
+
+```bash
+python -m venv .env
+source .env/bin/activate
+pip install -r requirements.txt
+```
+
+## Data
+
 This repository contains a folder, data, which contains all the data files that were used in the work:
+
+```
 data_140_binding_sites.csv
 data_20_binding_sites.csv
 data_35_binding_sites.csv
@@ -14,17 +30,23 @@ sim_80_flors.csv
 sim_demonstration.csv
 sim_high_noise.csv
 sim_start_dark.csv
+```
+
 Each data file is a csv where each row is the brightness trace of a different ROI and each column is a differnt time level. For example, the brightness of the 4th ROI at the 27th time level in data simulated with 20 fluorophroes will be the element of sim_20_flors in the 4th row and 27th column.
+
+## Running the code
 
 This repository contains 4 python files main.py, fluorophore_counter.py, algorithms.py, and simulate_data.py. The first file, main.py, is the only file that should be run and edited. The remaining files simply hold functions that are called by main.py. To run the main.py file simply specify the ID (line 69) for which data set to run on and then execute the code. We break down how the code works below.
 
-
 The flourophore counter algorithm has been packaged into a python class. To import the fluorophore counter use:
 
+```python
 from fluorophore_counter import FluorophoreCounter
+```
 
 The algorithm as some required parameters. Before running the fluorophore counter you must create a dictionary and specify the camera gain and fluorophore brightness guess in ADU (which can be estimated by eye from the last photobleaching brightness drop). Parameters can also take in other options such as "seed" which sets the random number generator seed, "parpool_status" which is a bool determining whether or not to use paralelization, "dt" which is the exposure period of the camera (which affects plotting but not the inferreed number of fluorophores), and "num_states" which specifies the state model that will be used. Other hyperparameters found in the dictionary on top of fluorophore_counter.py can be tuned, but that is not reccomended. The reccomended parameters setting is
 
+```python
 parameters = {
     'dt': <<Insert camera exposure period here>>
     'gain': <<Insert calibrated gain here>>,
@@ -32,9 +54,11 @@ parameters = {
     'num_states': 4,         # num_states should always be greater than 2 to include a blinking state
     'parpool_status': True,  # Use True only if you wish to paralelize.
 }
+```
 
 To run the algorithm on a data set we use the class method, gibbs_sampler. gibbs_sampler takes in two required arguments, data and parameters, as well as other useful arguments. In particular, num_iter sets the number of iterations of MCMC will be used, save_name sets the name of the saved MCMC runs, and plot_status allows the user to choose whether or not to see live plots of the MCMC chain. The recomended way to run the algorithm is
 
+```python
 counter = FluorophoreCounter()
 counter.gibbs_sampler(
     data=data,
@@ -43,23 +67,29 @@ counter.gibbs_sampler(
     save_name='my_data',  # change the name as you look at new data sets or use different parameters
     plot_status=True,  # a plot of the data will be generated at each iteration if plot_status is True
 )
+```
 
 There is no output from gibbs_sampler, instead a set of files is saved in the local directory with names determined by save_name (to change the output directory one can specify save_path in gibbs_sampler). The MCMC samples can be accessed from a class attribute called history. history is a class that organizes MCMC samples into H5 and pickle files. To get the sampled number of fluorophores from the MCMC chain, history has a built in function called "get" which takes in a string of the desired variable and then outputs an array of the samples. The first dimension of the output from "get" will always the the number of iterations. For most purposes we only need to find the MCMC chain of the number of fluorophores in each ROI. To get this estimate we run
 
+```python
 mcmc_chain_for_num_flors = counter.history.get('num_flor')
+```
 
 mcmc_chain_for_num_flors will be a <number of iterations> X <number of ROIs> array. We can also access the mcmc chains for the fluorophore state brightnesses, the background brightnesses, the transition matrix, and the log probability using "get". Lastly, we can use "get" to get the MAP set of variables, that is, the set of variables encountered in the MCMC chain that had the highest probability. To see this we use
 
+```python
 map_vars = counter.history.get('map')
+```
 
 map_vars will be a SimpleNamespace type where each attribute is a parameter used in the Gibbs sampler. For example, to get the highest probability number of fluorophores in each ROI we can use
 
+```python
 map_num_flors = map_vars.num_flor
+```
 
 Puttining it all together, assuming that all we want from the algorithm is the number of fluorophore in the data, we can use 
 
-
-
+```python
 from fluorophore_counter import FluorophoreCounter
 
 # set parameters (modify these three lines as needed)
@@ -86,4 +116,5 @@ counter.gibbs_sampler(
 map_num_flors = counter.history.get('map').num_flors
 
 
+```
 
