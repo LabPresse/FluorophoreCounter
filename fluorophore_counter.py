@@ -482,7 +482,7 @@ class FluorophoreCounter:
 
         # hmc dynamics variables
         h = np.random.exponential() / 100
-        masses = (1 + np.random.pareto(1, size=q.shape))
+        masses = (1 + np.random.pareto(1, size=q.shape)) * (q>0)
         masses_inv = np.zeros(shape=masses.shape)  # negative mass is interpretted as an unchanging variable
         masses_inv[masses > 0] = 1 / masses[masses > 0]
         num_steps = np.random.poisson(25)
