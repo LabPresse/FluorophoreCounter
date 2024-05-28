@@ -726,12 +726,13 @@ class FluorophoreCounter:
         """
 
         if val is None:
-            val = self.history.MAP
+            val = self.history.get('map')
 
         if roi is None:
-            roi = np.array([0])
-        elif np.isscalar:
-            roi = np.array([roi])
+            roi = [0]
+        elif np.isscalar(roi):
+            roi = [roi]
+        roi = np.array(roi)
 
         data = self.data
 
@@ -747,15 +748,16 @@ class FluorophoreCounter:
 
         times = np.arange(num_data) * dt
 
+        # Set up figure
         fig = plt.gcf()
         fig.clf()
-        #fig.set_size_inches(12, 6)
+        plt.ion()
+        plt.show()
         ax = np.empty((len(roi), 1), dtype=object)
-        gs = gridspec.GridSpec(nrows=len(roi), ncols=1, figure=fig)
-        ax[0, 0] = fig.add_subplot(gs[0, 0])
-        for i in range(len(roi)-1):
-            ax[i, 0] = fig.add_subplot(gs[i, 0], sharex=ax[0, 0])
+        for i in range(len(roi)):
+            ax[i, 0] = fig.add_subplot(len(roi), 1, i+1)
 
+        # Loop through ROIs
         for i, r in enumerate(roi):
 
             brightness = mu_flor @ states_to_pops(states[r, :, :], num_states) + mu_back[r]
@@ -767,7 +769,7 @@ class FluorophoreCounter:
             ax[i, 0].plot(times, brightness * gain, color='b', label='sampled')
             ax[i, 0].legend()
 
-        # plt.tight_layout()
+        plt.tight_layout()
         plt.pause(.1)
 
         return
